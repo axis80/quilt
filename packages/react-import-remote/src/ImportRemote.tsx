@@ -22,7 +22,7 @@ export interface Props<Imported = any> {
   defer?: DeferTiming;
 }
 
-export function ImportRemote(props: Props) {
+export default function ImportRemote(props: Props) {
   const {
     source,
     preconnect,
@@ -66,7 +66,6 @@ export function ImportRemote(props: Props) {
       }
     };
   });
-
 
   const intersectionObserver =
     !loaded && !loading && defer === DeferTiming.InViewport ? (
