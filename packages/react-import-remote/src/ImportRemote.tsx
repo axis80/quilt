@@ -1,6 +1,11 @@
 import * as React from 'react';
 import {Preconnect} from '@shopify/react-html';
-import {DeferTiming} from '@shopify/async';
+import {
+  RequestIdleCallbackHandle,
+  DeferTiming,
+  WindowWithRequestIdleCallback,
+} from '@shopify/async';
+
 import {
   IntersectionObserver,
   UnsupportedBehavior,
@@ -28,27 +33,39 @@ export function ImportRemote(props: Props) {
     onImported,
   } = props;
 
-  const {loading, loaded, error, imported} = useImportRemote(
+  const idleCallbackHandle = React.useRef<RequestIdleCallbackHandle | null>(
+    null,
+  );
+  const {loaded, loading, error, imported, loadRemote} = useImportRemote(
     source,
-    {defer, nonce},
     getImport,
+    {nonce},
   );
 
-  React.useEffect(
-    () => {
-      if (error != null) {
-        onError(error);
+  React.useEffect(() => {
+    if (defer === DeferTiming.Idle && 'requestIdleCallback' in window) {
+      if ('requestIdleCallback' in window) {
+        idleCallbackHandle.current = (window as WindowWithRequestIdleCallback).requestIdleCallback(
+          loadRemote,
+        );
+      } else {
+        loadRemote();
       }
-    },
-    [error, onError],
-  );
+    } else if (defer === DeferTiming.Mount) {
+      loadRemote();
+    }
 
-  React.useEffect(
-    () => {
-      onImported(imported);
-    },
-    [imported, onImported],
-  );
+    return () => {
+      if (
+        idleCallbackHandle.current != null &&
+        'cancelIdleCallback' in window
+      ) {
+        (window as WindowWithRequestIdleCallback).cancelIdleCallback(
+          idleCallbackHandle.current,
+        );
+      }
+    };
+  });
 
 
   const intersectionObserver =
@@ -56,9 +73,20 @@ export function ImportRemote(props: Props) {
       <IntersectionObserver
         threshold={0}
         unsupportedBehavior={UnsupportedBehavior.TreatAsIntersecting}
-        onIntersecting={this.loadRemote}
+        onIntersecting={loadRemote}
       />
     ) : null;
+
+  React.useEffect(
+    () => {
+      if (error != null) {
+        onError(error);
+      }
+
+      onImported(imported);
+    },
+    [error, imported],
+  );
 
   if (preconnect) {
     const url = new URL(source);
