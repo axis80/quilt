@@ -16,3 +16,8 @@ $ yarn add @shopify/graphql-persisted
 ### Apollo
 
 ### Koa
+
+## Prior art
+
+https://github.com/apollographql/persistgraphql
+https://github.com/leoasis/graphql-persisted-document-loader
