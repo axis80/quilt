@@ -141,6 +141,8 @@ function translateWithDictionary(
       ...replacements,
       ...additionalReplacements,
     });
+  } else if (typeof processedString === 'object') {
+    return processedString;
   } else {
     return MISSING_TRANSLATION;
   }

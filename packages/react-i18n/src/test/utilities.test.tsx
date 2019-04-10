@@ -84,6 +84,12 @@ describe('translate()', () => {
     expect(translate('foo.bar', {}, dictionaries, locale)).toBe('one');
   });
 
+  it('returns the translation keys if it has nested values', () => {
+    expect(translate('foo', {}, {foo: {bar: 'one'}}, locale)).toEqual({
+      bar: 'one',
+    });
+  });
+
   describe('replacements', () => {
     it('performs replacements with strings', () => {
       expect(
