@@ -45,6 +45,7 @@ export function useImportRemote<Imported = any>(
         try {
           setState('loading');
           const importResult = await load(source, getImport, nonce);
+
           setImported(importResult);
           onImported(importResult);
         } catch (error) {
@@ -69,7 +70,12 @@ export function useImportRemote<Imported = any>(
       ) {
         loadRemote();
       }
+    },
+    [state, defer, intersection, loadRemote],
+  );
 
+  React.useEffect(
+    () => {
       if (defer === DeferTiming.Idle && 'requestIdleCallback' in window) {
         if ('requestIdleCallback' in window) {
           idleCallbackHandle.current = (window as WindowWithRequestIdleCallback).requestIdleCallback(
@@ -93,7 +99,7 @@ export function useImportRemote<Imported = any>(
         }
       };
     },
-    [defer, loadRemote, state, intersection, nonce, getImport, source],
+    [defer, loadRemote, intersection, nonce, getImport, source],
   );
 
   return {state, imported, intersectionRef};

@@ -1,5 +1,6 @@
 import * as React from 'react';
-import {mount, trigger} from '@shopify/react-testing';
+import {act} from 'react-dom/test-utils';
+import {mount} from '@shopify/react-testing';
 import {Preconnect} from '@shopify/react-html';
 import {DeferTiming} from '@shopify/async';
 import {IntersectionObserver} from '@shopify/react-intersection-observer';
@@ -153,10 +154,16 @@ describe('<ImportRemote />', () => {
   });
 
   describe('defer', () => {
-    it('does not call load until idle when defer is DeferTiming.Idle', () => {
-      mount(<ImportRemote {...mockProps} defer={DeferTiming.Idle} />);
+    fit('does not call load until idle when defer is DeferTiming.Idle', () => {
+      const loadremote = mount(
+        <ImportRemote {...mockProps} defer={DeferTiming.Idle} />,
+      );
       expect(load).not.toHaveBeenCalled();
-      requestIdleCallback.runIdleCallbacks();
+
+      act(() => {
+        requestIdleCallback.runIdleCallbacks();
+      });
+
       expect(load).toHaveBeenCalled();
     });
 
