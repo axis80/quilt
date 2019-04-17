@@ -128,7 +128,7 @@ export function useField<Value = string>(
       dispatch(updateErrorAction(undefined));
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state.value, ...validators, ...dependencies],
+    [state.value, ...dependencies],
   );
 
   const onChange = useCallback(
