@@ -1,51 +1,100 @@
 import * as React from 'react';
+import {useIntersection} from '@shopify/react-intersection-observer';
+import {
+  DeferTiming,
+  WindowWithRequestIdleCallback,
+  RequestIdleCallbackHandle,
+} from '@shopify/async';
 import load from './load';
 
-interface Options {
+interface Options<Imported> {
   nonce?: string;
+  defer?: DeferTiming;
+  onError?(error: Error): void;
+  getImport(window: Window): Imported;
+  onImported?(imported: Imported): void;
 }
+
+type State = 'loading' | 'error' | 'loaded' | null;
 
 export function useImportRemote<Imported = any>(
   source: string,
-  getImport: (window: Window) => Imported,
-  options: Options = {},
+  options: Options<Imported>,
 ): {
-  loading: boolean;
-  loaded: boolean;
-  error: Error | null;
+  state: State;
   imported: Imported | null;
-  loadRemote(): void;
+  intersectionRef: any;
 } {
-  const [loading, setLoading] = React.useState({loaded: false, loading: false});
+  const [intersection, intersectionRef] = useIntersection();
+  const [state, setState] = React.useState<State>(null);
   const [imported, setImported] = React.useState<Imported | null>(null);
-  const [error, setError] = React.useState<Error | null>(null);
-  const {nonce = ''} = options;
+  const idleCallbackHandle = React.useRef<RequestIdleCallbackHandle | null>(
+    null,
+  );
+  const {
+    defer = DeferTiming.Mount,
+    nonce = '',
+    getImport,
+    onError = () => {},
+    onImported = () => {},
+  } = options;
 
-  const loadRemote = () => {
-    return new Promise(async resolve => {
-      try {
-        setLoading({loaded: false, loading: true});
-        setImported(await load(source, getImport, nonce));
-      } catch (err) {
-        setError(err);
-      } finally {
-        setLoading({loaded: true, loading: false});
-        resolve();
-      }
-    });
-  };
+  const loadRemote = React.useCallback(
+    () => {
+      return new Promise(async resolve => {
+        try {
+          setState('loading');
+          const importResult = await load(source, getImport, nonce);
+          setImported(importResult);
+          onImported(importResult);
+        } catch (error) {
+          setState('error');
+          onError(error);
+        } finally {
+          setState('loaded');
+          resolve();
+        }
+      });
+    },
+    [getImport, nonce, onError, onImported, source],
+  );
 
   React.useEffect(
     () => {
-      if (loadRemote == null) {
-        return;
+      if (
+        state !== 'loaded' &&
+        state !== 'loading' &&
+        defer === DeferTiming.InViewport &&
+        intersection.isIntersecting
+      ) {
+        loadRemote();
       }
 
-      loadRemote();
-    },
+      if (defer === DeferTiming.Idle && 'requestIdleCallback' in window) {
+        if ('requestIdleCallback' in window) {
+          idleCallbackHandle.current = (window as WindowWithRequestIdleCallback).requestIdleCallback(
+            loadRemote,
+          );
+        } else {
+          loadRemote();
+        }
+      } else if (defer === DeferTiming.Mount) {
+        loadRemote();
+      }
 
-    [source, nonce, getImport],
+      return () => {
+        if (
+          idleCallbackHandle.current != null &&
+          'cancelIdleCallback' in window
+        ) {
+          (window as WindowWithRequestIdleCallback).cancelIdleCallback(
+            idleCallbackHandle.current,
+          );
+        }
+      };
+    },
+    [defer, loadRemote, state, intersection, nonce, getImport, source],
   );
 
-  return {...loading, imported, error, loadRemote};
+  return {state, imported, intersectionRef};
 }

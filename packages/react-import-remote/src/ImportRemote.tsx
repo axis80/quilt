@@ -1,15 +1,7 @@
 import * as React from 'react';
 import {Preconnect} from '@shopify/react-html';
-import {
-  RequestIdleCallbackHandle,
-  DeferTiming,
-  WindowWithRequestIdleCallback,
-} from '@shopify/async';
+import {DeferTiming} from '@shopify/async';
 
-import {
-  IntersectionObserver,
-  UnsupportedBehavior,
-} from '@shopify/react-intersection-observer';
 import {useImportRemote} from './hooks';
 
 export interface Props<Imported = any> {
@@ -22,70 +14,27 @@ export interface Props<Imported = any> {
   defer?: DeferTiming;
 }
 
-export default function ImportRemote(props: Props) {
-  const {
-    source,
-    preconnect,
-    nonce,
-    defer,
-    getImport,
+export default function ImportRemote({
+  source,
+  nonce,
+  preconnect,
+  onError,
+  getImport,
+  onImported,
+  defer,
+}: Props) {
+  const {intersectionRef} = useImportRemote(source, {
     onError,
     onImported,
-  } = props;
-
-  const idleCallbackHandle = React.useRef<RequestIdleCallbackHandle | null>(
-    null,
-  );
-  const {loaded, loading, error, imported, loadRemote} = useImportRemote(
-    source,
+    defer,
+    nonce,
     getImport,
-    {nonce},
-  );
-
-  React.useEffect(() => {
-    if (defer === DeferTiming.Idle && 'requestIdleCallback' in window) {
-      if ('requestIdleCallback' in window) {
-        idleCallbackHandle.current = (window as WindowWithRequestIdleCallback).requestIdleCallback(
-          loadRemote,
-        );
-      } else {
-        loadRemote();
-      }
-    } else if (defer === DeferTiming.Mount) {
-      loadRemote();
-    }
-
-    return () => {
-      if (
-        idleCallbackHandle.current != null &&
-        'cancelIdleCallback' in window
-      ) {
-        (window as WindowWithRequestIdleCallback).cancelIdleCallback(
-          idleCallbackHandle.current,
-        );
-      }
-    };
   });
 
   const intersectionObserver =
-    !loaded && !loading && defer === DeferTiming.InViewport ? (
-      <IntersectionObserver
-        threshold={0}
-        unsupportedBehavior={UnsupportedBehavior.TreatAsIntersecting}
-        onIntersecting={loadRemote}
-      />
+    defer === DeferTiming.InViewport && intersectionRef ? (
+      <div ref={intersectionRef} />
     ) : null;
-
-  React.useEffect(
-    () => {
-      if (error != null) {
-        onError(error);
-      }
-
-      onImported(imported);
-    },
-    [error, imported],
-  );
 
   if (preconnect) {
     const url = new URL(source);

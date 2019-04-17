@@ -1,12 +1,13 @@
 import * as React from 'react';
-import {mount} from '@shopify/react-testing';
+import {mount, trigger} from '@shopify/react-testing';
 import {Preconnect} from '@shopify/react-html';
 import {DeferTiming} from '@shopify/async';
 import {IntersectionObserver} from '@shopify/react-intersection-observer';
 import {noop} from '@shopify/javascript-utilities/other';
-import {requestIdleCallback} from '@shopify/jest-dom-mocks';
-import {trigger} from '@shopify/enzyme-utilities';
-
+import {
+  requestIdleCallback,
+  intersectionObserver as intersectionObserverMock,
+} from '@shopify/jest-dom-mocks';
 import ImportRemote, {Props} from '../ImportRemote';
 
 jest.mock('@shopify/react-html', () => ({
@@ -29,11 +30,13 @@ const load: jest.Mock = require.requireMock('../load');
 describe('<ImportRemote />', () => {
   beforeEach(() => {
     requestIdleCallback.mock();
+    intersectionObserverMock.mock();
     load.mockClear();
   });
 
   afterEach(() => {
     requestIdleCallback.restore();
+    intersectionObserverMock.restore();
   });
 
   const mockProps: Props = {
@@ -163,16 +166,12 @@ describe('<ImportRemote />', () => {
       );
       expect(load).not.toHaveBeenCalled();
 
-      expect(importRemote.find(IntersectionObserver)).toHaveProp(
-        'threshold',
-        0,
-      );
+      expect(importRemote.find(IntersectionObserver)).toHaveReactProps({
+        threshold: 0,
+      });
 
-      await trigger(
-        importRemote.find(IntersectionObserver),
-        'onIntersectionChange',
-        {isIntersecting: true},
-      );
+      // perform something that gets us into view
+      // importRemote.trigger()
 
       expect(importRemote.find(IntersectionObserver)).toHaveLength(0);
       expect(load).toHaveBeenCalled();
