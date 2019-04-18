@@ -8,7 +8,7 @@ import {
   FieldState,
   ErrorValue,
   ListValidationContext,
-} from '@shopify/react-form-hooks/src/types';
+} from '../../types';
 import {mapObject, normalizeValidation, isChangeEvent} from '../../utilities';
 import {
   updateAction,

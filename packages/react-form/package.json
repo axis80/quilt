@@ -1,8 +1,8 @@
 {
-  "name": "@shopify/react-form-hooks",
+  "name": "@shopify/react-form",
   "version": "0.0.0",
   "license": "MIT",
-  "description": "Manage react forms tersely and safely-typed with no magic using React hooks. Build up your form logic by combining hooks yourself, or take advantage of the smart defaults provided by the powerful &#x60;useForm&#x60; hook.",
+  "description": "Manage react forms tersely and safely-typed with no magic using React hooks.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "sideEffects": false,
@@ -22,7 +22,7 @@
   "bugs": {
     "url": "https://github.com/shopify/quilt/issues"
   },
-  "homepage": "https://github.com/Shopify/quilt/blob/master/packages/react-form-hooks/README.md",
+  "homepage": "https://github.com/Shopify/quilt/blob/master/packages/react-form/README.md",
   "peerDependencies": {
     "react": ">=16.8.0 <17.0.0"
   },

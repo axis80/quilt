@@ -1,7 +1,7 @@
 import React from 'react';
 import {mount} from '@shopify/react-testing';
 import faker from 'faker';
-import {useField, FieldConfig} from '@shopify/react-form-hooks/src/hooks/field';
+import {useField, FieldConfig} from '../field';
 
 describe('useField', () => {
   function TestField({config}: {config: string | FieldConfig<any>}) {

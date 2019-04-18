@@ -12,7 +12,7 @@ import {useErrorPropagation} from './errorPropagation';
  *
  *```typescript
  * import React from 'react';
- * import {useField, useForm} from '@shopify/react-form-hooks';
+ * import {useField, useForm} from '@shopify/react-form';
  *
  *  function MyComponent() {
  *   const { fields, submit, submitting, dirty, reset, submitErrors } = useForm({

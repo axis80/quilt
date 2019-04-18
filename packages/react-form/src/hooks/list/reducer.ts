@@ -1,5 +1,5 @@
 import {useReducer, Reducer} from 'react';
-import {FieldStates, ErrorValue} from '@shopify/react-form-hooks/src/types';
+import {FieldStates, ErrorValue} from '../../types';
 import {
   reduceField,
   FieldAction,
