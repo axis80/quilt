@@ -64,29 +64,26 @@ export function useForm<T extends FieldBag>({
   const dirty = useDirty(fields);
   const reset = useReset(fields);
   const validate = useValidateAll(fields);
-  const [submit, submitting, submitErrors, setSubmitErrors] = useSubmit(
-    onSubmit,
-    fields,
-  );
-  useErrorPropagation(fields, submitErrors);
+  const {submit, submitting, errors, setErrors} = useSubmit(onSubmit, fields);
+  useErrorPropagation(fields, errors);
 
   return {
     fields,
     dirty,
     submitting,
-    submitErrors,
+    submitErrors: errors,
     validate,
     submit(event?: React.FormEvent) {
       const clientErrors = validate();
       if (clientErrors.length > 0) {
-        setSubmitErrors(clientErrors);
+        setErrors(clientErrors);
         return;
       }
 
       submit(event);
     },
     reset() {
-      setSubmitErrors([]);
+      setErrors([]);
       reset();
     },
   };

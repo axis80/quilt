@@ -12,12 +12,7 @@ import {mapObject, isField} from '../utilities';
 export function useSubmit<T extends FieldBag>(
   onSubmit: SubmitHandler<FormMapping<T, 'value'>> = noopSubmission,
   fieldBag: T,
-): [
-  (event?: React.FormEvent) => Promise<void>,
-  boolean,
-  FormError[],
-  (errors: FormError[]) => void
-] {
+) {
   const [submitting, setSubmitting] = useState(false);
   const [remoteErrors, setRemoteErrors] = useState([] as FormError[]);
 
@@ -40,7 +35,7 @@ export function useSubmit<T extends FieldBag>(
     [fieldBag, onSubmit],
   );
 
-  return [submit, submitting, remoteErrors, setRemoteErrors];
+  return {submit, submitting, errors: remoteErrors, setErrors: setRemoteErrors};
 }
 
 function getValues<T extends FieldBag>(fieldBag: T) {

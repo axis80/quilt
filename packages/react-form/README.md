@@ -61,12 +61,16 @@ function MyComponent() {
     },
   });
 
+  const loading = submitting ? <p className="loading">loading...</p> : null;
+  const errors =
+    submitErrors.length > 0 ? (
+      <p className="error">{submitErrors.join(', ')}</p>
+    ) : null;
+
   return (
     <form onSubmit={submit}>
-      {submitting && <p className="loading">loading...</p>}
-      {submitErrors.length > 0 && (
-        <p className="error">{submitErrors.join(', ')}</p>
-      )}
+      {loading}
+      {errors}
       <div>
         <label htmlFor="title">
           Title
@@ -132,36 +136,41 @@ export default function MyComponent() {
     },
   });
 
+  const contextBar = dirty ? (
+    <ContextualSaveBar
+      message="Unsaved product"
+      saveAction={{
+        onAction: submit,
+        loading: submitting,
+        disabled: false,
+      }}
+      discardAction={{
+        onAction: reset,
+      }}
+    />
+  ) : null;
+
+  const errorBanner =
+    submitErrors.length > 0 ? (
+      <Layout.Section>
+        <Banner status="critical">
+          <p>There were some issues with your form submission:</p>
+          <ul>
+            {submitErrors.map(({message}, index) => {
+              return <li key={`${message}${index}`}>{message}</li>;
+            })}
+          </ul>
+        </Banner>
+      </Layout.Section>
+    ) : null;
+
   return (
     <Frame>
       <Form onSubmit={submit}>
         <Page title="New Product">
-          {dirty && (
-            <ContextualSaveBar
-              message="Unsaved product"
-              saveAction={{
-                onAction: submit,
-                loading: submitting,
-                disabled: false,
-              }}
-              discardAction={{
-                onAction: reset,
-              }}
-            />
-          )}
+          {contextBar}
           <Layout>
-            {submitErrors.length > 0 && (
-              <Layout.Section>
-                <Banner status="critical">
-                  <p>There were some issues with your form submission:</p>
-                  <ul>
-                    {submitErrors.map(({message}, index) => {
-                      return <li key={`${message}${index}`}>{message}</li>;
-                    })}
-                  </ul>
-                </Banner>
-              </Layout.Section>
-            )}
+            {errorBanner}
             <Layout.Section>
               <Card sectioned>
                 <FormLayout>
@@ -228,51 +237,52 @@ export default function MyComponent() {
   const reset = useReset(fields);
 
   // handle submission state
-  const [submit, submitting, submitErrors, setSubmitErrors] = useSubmit(
-    fieldValues => {
-      const remoteErrors = []; // your API call goes here
-      if (remoteErrors.length > 0) {
-        return {status: 'fail', errors: remoteErrors};
-      }
+  const {submit, submitting, errors, setErrors} = useSubmit(fieldValues => {
+    const remoteErrors = []; // your API call goes here
+    if (remoteErrors.length > 0) {
+      return {status: 'fail', errors: remoteErrors};
+    }
 
-      return {status: 'success'};
-    },
-    fields,
-  );
+    return {status: 'success'};
+  }, fields);
 
   // propagate submit errors back to the fields
-  useErrorPropagation(fields, submitErrors);
+  useErrorPropagation(fields, errors);
+
+  const contextBar = dirty && (
+    <ContextualSaveBar
+      message="Unsaved product"
+      saveAction={{
+        onAction: submit,
+        loading: submitting,
+        disabled: false,
+      }}
+      discardAction={{
+        onAction: reset,
+      }}
+    />
+  );
+
+  const errorBanner = errors.length > 0 && (
+    <Layout.Section>
+      <Banner status="critical">
+        <p>There were some issues with your form submission:</p>
+        <ul>
+          {errors.map(({message}, index) => {
+            return <li key={`${message}${index}`}>{message}</li>;
+          })}
+        </ul>
+      </Banner>
+    </Layout.Section>
+  );
 
   return (
     <Frame>
       <Form onSubmit={submit}>
         <Page title="New Product">
-          {dirty && (
-            <ContextualSaveBar
-              message="Unsaved product"
-              saveAction={{
-                onAction: submit,
-                loading: submitting,
-                disabled: false,
-              }}
-              discardAction={{
-                onAction: reset,
-              }}
-            />
-          )}
+          {contextBar}
           <Layout>
-            {submitErrors.length > 0 && (
-              <Layout.Section>
-                <Banner status="critical">
-                  <p>There were some issues with your form submission:</p>
-                  <ul>
-                    {submitErrors.map(({message}, index) => {
-                      return <li key={`${message}${index}`}>{message}</li>;
-                    })}
-                  </ul>
-                </Banner>
-              </Layout.Section>
-            )}
+            {errorBanner}
             <Layout.Section>
               <Card sectioned>
                 <FormLayout>
@@ -299,7 +309,7 @@ This section details the individual functions exported by `@shopify-react-form`.
 
 ### Hooks
 
-#### useField
+#### `useFiel()d()`
 
 A custom hook for handling the state and validations of an input field.
 
@@ -309,9 +319,14 @@ A custom hook for handling the state and validations of an input field.
 const field = useField(config, validationDependencies);
 ```
 
-`config` - The default value of the input, or a configuration object specifying both the value and validation config.
-`validationDependencies` - An array of values for determining when to regenerate the field's validation callbacks. Anyalue that is referenced by a validator other than those passed into it should be included.
-`returns` - A `Field` object representing the state of your input. It also includes functions to manipulate that state. Generally,ou will want to pass these callbacks down to the component or components representing your input.
+###### Parameters:
+
+- `config`, The default value of the input, or a configuration object specifying both the value and validation config.
+- `validationDependencies`, An optional array of values for determining when to regenerate the field's validation callbacks. Any value that is referenced by a validator other than those passed into it should be included.
+
+###### Return value:
+
+A `Field` object representing the state of your input. It also includes functions to manipulate that state. Generally,ou will want to pass these callbacks down to the component or components representing your input.
 
 ##### Examples
 
@@ -358,6 +373,9 @@ Generally, you will want to use the object returned from useField to handle stat
 
 ```tsx
 const title = useField('default title');
+
+const fieldError = field.error ? <p>{field.error}</p> : null;
+
 return (
   <div>
     <label htmlFor="test-field">
@@ -370,7 +388,7 @@ return (
         onBlur={field.onBlur}
       />
     </label>
-    {field.error && <p>{field.error}</p>}
+    {fieldError}
   </div>
 );
 ```
@@ -389,7 +407,7 @@ return <TextField label="Title" {...title} />;
 
 **Imperative methods:** The returned `Field` object contains a number of methods used to imperatively alter its state. These should only be used as escape hatches where the existing hooks and components do not make your life easy, or to build new abstractions in the same vein as `useForm`, `useSubmit` and friends.
 
-#### useList
+#### `useList()`
 
 A custom hook for handling the state and validations of fields for a list of objects.
 
@@ -399,9 +417,14 @@ A custom hook for handling the state and validations of fields for a list of obj
 const fields = useList(config, validationDependencies);
 ```
 
-`config` - A configuration object specifying both the value and validation config.
-`validationDependencies` - An array of dependencies to use to decide when to regenerate validators.
-`returns` - A list of dictionaries of `Field` objects representing the state of your input. It also includes functions to manipulate that state. Generally, you will want to pass these callbacks down to the component or components representing yournput.
+###### Parameters:
+
+- `config`, A configuration object specifying both the value and validation config.
+- `validationDependencies`, An array of dependencies to use to decide when to regenerate validators.
+
+###### Return value:
+
+A list of dictionaries of `Field` objects representing the state of your input. It also includes functions to manipulate that state. Generally, you will want to pass these callbacks down to the component or components representing yournput.
 
 ##### Examples
 
@@ -417,7 +440,7 @@ const field = useList([
 You can also pass a more complex configuration object specifying a validation dictionary.
 
 ```tsx
-const field = useField({
+const field = useList({
   list: [{title: '', description: ''}, {title: '', description: ''}],
   validates: {
     title: title => {
@@ -438,7 +461,7 @@ Generally, you will want to use the list returned from useList by looping over i
 
 ```tsx
 function MyComponent() {
-  const title = useField([
+  const variants = useList([
     {title: '', description: ''},
     {title: '', description: ''},
   ]);
@@ -480,7 +503,7 @@ If using `@shopify/polaris` or other custom components that support `onChange`, 
 
 ```tsx
 function MyComponent() {
-  const title = useField([
+  const variants = useList([
     {title: '', description: ''},
     {title: '', description: ''},
   ]);
@@ -508,7 +531,7 @@ function MyComponent() {
 
 **Imperative methods:** The returned `Field` objects contains a number of methods used to imperatively alter their state. These should only be used as escape hatches where the existing hooks and components do not make your life easy, or to build new abstractions in the same vein as `useForm`, `useSubmit` and friends.
 
-#### useForm
+#### `useForm()`
 
 A custom hook for managing the state of an entire form. `useForm` wraps up many of the other hooks in this package in one API, and when combined with `useField` and `useList`, allows you to easily build complex forms with smart defaults for common cases.
 
@@ -518,11 +541,16 @@ A custom hook for managing the state of an entire form. `useForm` wraps up many 
 const form = useForm(config);
 ```
 
-`config` - An object has the following fields:
+###### Parameters:
 
-`fields` - A dictionary of `Field` objects, dictionaries of `Field` objects, and lists of dictionaries of `Field` objects. Generally, you'll want these to be generated by the other hooks in this package, either `useField` or `useList`. This will be returned back out as the `fields` property of the return value.
-`onSubmit` - An async function to handle submission of the form. If this function returns an object of `{state: 'fail', error: FormError[]}` then the submission is considered a failure. Otherwise, it should return an object with `{state: 'success'}` and the submission will be considered a success. `useForm` will also call all client-side validation methods for the fields passed to it. The `onSubmit` handler will not be called if client validations fails.
-`returns` - An object representing the current state of the form, with imperative methods to reset, submit, and validate. Generally, the returned properties correspond 1:1 with the specific hook for their functionality.
+- `config`, An object has the following fields:
+
+  - `fields`, A dictionary of `Field` objects, dictionaries of `Field` objects, and lists of dictionaries of `Field` objects. Generally, you'll want these to be generated by the other hooks in this package, either `useField` or `useList`. This will be returned back out as the `fields` property of the return value.
+  - `onSubmit`, An async function to handle submission of the form. If this function returns an object of `{state: 'fail', error: FormError[]}` then the submission is considered a failure. Otherwise, it should return an object with `{state: 'success'}` and the submission will be considered a success. `useForm` will - also call all clien, ide validation methods for the fields passed to it. The `onSubmit` handler will not be called if client validations fails.
+
+###### Return value:
+
+An object representing the current state of the form, with imperative methods to reset, submit, and validate. Generally, the returned properties correspond 1:1 with the specific hook for their functionality.
 
 #### Examples
 
