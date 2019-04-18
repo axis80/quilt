@@ -63,10 +63,19 @@ function valuesOfFields(fields: FieldDictionary<any>) {
   });
 }
 
+/**
+ * A convenience function for `onSubmit` callbacks returning values to `useSubmit` or `useForm`.
+ * @return Returns a `SubmitResult` representing your successful form submission.
+ */
 export function submitSuccess(): SubmitResult {
   return {status: 'success'};
 }
 
+/**
+ * A convenience function for `onSubmit` callbacks returning values to `useSubmit` or `useForm`
+ * @param errors - An array of errors with the user's input. These can either include both a `fieldPath` and a `message`, in which case they will be passed down to a matching field, or just a `message`.
+ * @return Returns a `SubmitResult` representing your failed form submission.
+ */
 export function submitFail(errors: FormError[] = []): SubmitResult {
   return {status: 'fail', errors};
 }
