@@ -261,7 +261,7 @@ The Serialize component takes care of rendering a `script` tag with a serialized
 The `render()` function creates a stringified version of the HTML document with an appropriate DOCTYPE. It is only available from the server entrypoint of this package (`@shopify/react-html/server`).
 
 ```tsx
-import {render, Html} from '@shopify/react-html/sever';
+import {render, Html} from '@shopify/react-html/server';
 
 const markup = render(<Html>Hello world!</Html>);
 ```
